@@ -1,0 +1,88 @@
+﻿@using System.Security.Claims
+
+@{
+    var name = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  </head>
+  <body>
+    @RenderBody()
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+  </body>
+</html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+<script>
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+    let currentGroup = "";
+    //Disable the send button until connection is established.
+    document.getElementById("sendButton").disabled = true;
+    connection.on("ReceiveMessage", function (user, message) {
+        if (user == "@Html.Raw(name)") {
+            var messageContainer = $("<div class='text-end m-2 '> <img style='width:25px; height: 25px;' class='rounded-5 mx-2' src='/images/avatar.jpg' /> <span>Gönderen :" + user + "</span>" + message + "</div>");
+        }
+        else{
+            var messageContainer = $("<div class='m-2 '> <img style='width:25px; height: 25px;' class='rounded-5 mx-2' src='/images/avatar.jpg' /> <span>Gönderen :" + user + "</span>" + message + "</div>");
+        }
+        
+        $(".messages").append(messageContainer);
+    });
+
+    async function joinGroup(groupName) {
+        try {
+            await connection.invoke("JoinGroup", groupName);
+            console.log(`Gruba katılım başarılı. Grup Adı: ${groupName}`);
+            currentGroup = groupName; // Kullanıcının şu anki gruptaki adı güncelleniyor
+        } catch (err) {
+            console.error("Gruba katılma hatası: ", err);
+        }
+    }
+
+    // Grubu terk etme
+    async function leaveGroup(groupName) {
+        try {
+            await connection.invoke("LeaveGroup", groupName);
+            console.log(`Grubu terk etme başarılı. Grup Adı: ${groupName}`);
+            currentGroup = ""; // Kullanıcının şu anki gruptaki adı temizleniyor
+        } catch (err) {
+            console.error("Grubu terk etme hatası: ", err);
+        }
+    }
+
+    connection.start().then(function () {
+        document.getElementById("sendButton").disabled = false;
+
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    document.getElementById("sendButton").addEventListener("click", function (event) {
+        var user = "@Html.Raw(name)";
+        var message = document.getElementById("messageInput").value;
+        var chatRoom = currentGroup;
+
+        // Kullanıcı adı ve mesajı gerekli grup odasına gönder
+        connection.invoke("SendMessageToGroup", chatRoom, user, message)
+            .catch(function (err) {
+                return console.error(err.toString());
+            });
+
+        event.preventDefault();
+    });
+
+    function handleLinkClick(linkId) {
+        // Tıklanan linkin id'sini alıp saklamak için istediğiniz işlemi yapabilirsiniz.
+        // Bu örnekte, gruba katılma ve çıkma işlemlerini gerçekleştiriyoruz.
+        leaveGroup(currentGroup);
+        joinGroup(linkId);
+            
+    }
+</script>
