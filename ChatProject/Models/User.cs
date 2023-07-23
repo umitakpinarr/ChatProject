@@ -6,11 +6,11 @@ namespace ChatProject.Models
     {
         [Key]
         public int Id { get; set; }
-        [Required]
-        public string Name { get; set; }
-        [Required]
+        public string? Name { get; set; }
+        [Required(ErrorMessage = "Lütfen e-mail adresinizi giriniz.")]
         public string Email { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Lütfen e-mail adresinizi giriniz.")]
         public string Password { get; set; }
+        public string? Role { get; set; }
     }
 }

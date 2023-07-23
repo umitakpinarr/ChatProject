@@ -1,6 +1,45 @@
-﻿
+﻿@using System.Security.Claims
+
+@{
+    var name = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+}
+
 
 <section class="d-flex ">
+    <div class="col-md-5 d-flex flex-column">
+
+
+        <a onclick="handleLinkClick(this.id)" id="1">
+            <div class="card">
+                <div class="card-body">
+                    <span>Oda 1</span>
+                </div>
+            </div>
+        </a>
+        <a onclick="handleLinkClick(this.id)" id="2">
+            <div class="card">
+                <div class="card-body">
+                    <span>Oda 2</span>
+                </div>
+            </div>
+        </a>
+        <a onclick="handleLinkClick(this.id)" id="3">
+            <div class="card">
+                <div class="card-body">
+                    <span>Oda 3</span>
+                </div>
+            </div>
+        </a>
+        <a onclick="handleLinkClick(this.id)" id="4">
+            <div class="card">
+                <div class="card-body">
+                    <span>Oda 4</span>
+                </div>
+            </div>
+        </a>
+
+
+    </div>
     <div class="col-md-6">
         <div class="border">
             <div class="d-flex flex-column" id="messages">
@@ -48,3 +87,71 @@
     </div>
 </section>
 
+        @section Scripts{
+    <script>
+        var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+        let currentGroup = "";
+        //Disable the send button until connection is established.
+        document.getElementById("sendButton").disabled = true;
+        connection.on("ReceiveMessage", function (user, message) {
+            if (user == "@Html.Raw(name)") {
+                var messageContainer = $("<div class='text-end m-2 '> <img style='width:25px; height: 25px;' class='rounded-5 mx-2' src='/images/avatar.jpg' /> <span>Gönderen :" + user + "</span>" + message + "</div>");
+            }
+            else {
+                var messageContainer = $("<div class='m-2 '> <img style='width:25px; height: 25px;' class='rounded-5 mx-2' src='/images/avatar.jpg' /> <span>Gönderen :" + user + "</span>" + message + "</div>");
+            }
+
+            $(".messages").append(messageContainer);
+        });
+
+        async function joinGroup(groupName) {
+            try {
+                await connection.invoke("JoinGroup", groupName);
+                console.log(`Gruba katılım başarılı. Grup Adı: ${groupName}`);
+                currentGroup = groupName; // Kullanıcının şu anki gruptaki adı güncelleniyor
+            } catch (err) {
+                console.error("Gruba katılma hatası: ", err);
+            }
+        }
+
+        // Grubu terk etme
+        async function leaveGroup(groupName) {
+            try {
+                await connection.invoke("LeaveGroup", groupName);
+                console.log(`Grubu terk etme başarılı. Grup Adı: ${groupName}`);
+                currentGroup = ""; // Kullanıcının şu anki gruptaki adı temizleniyor
+            } catch (err) {
+                console.error("Grubu terk etme hatası: ", err);
+            }
+        }
+
+        connection.start().then(function () {
+            document.getElementById("sendButton").disabled = false;
+
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        document.getElementById("sendButton").addEventListener("click", function (event) {
+            var user = "@Html.Raw(name)";
+            var message = document.getElementById("messageInput").value;
+            var chatRoom = currentGroup;
+
+            // Kullanıcı adı ve mesajı gerekli grup odasına gönder
+            connection.invoke("SendMessageToGroup", chatRoom, user, message)
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+
+            event.preventDefault();
+        });
+
+        function handleLinkClick(linkId) {
+            // Tıklanan linkin id'sini alıp saklamak için istediğiniz işlemi yapabilirsiniz.
+            // Bu örnekte, gruba katılma ve çıkma işlemlerini gerçekleştiriyoruz.
+            leaveGroup(currentGroup);
+            joinGroup(linkId);
+
+        }
+    </script>
+        }

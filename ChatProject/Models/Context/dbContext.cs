@@ -13,5 +13,6 @@ namespace ChatProject.Models.Context
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<Group> Groups { get; set; }
     }
 }

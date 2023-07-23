@@ -14,7 +14,7 @@
     <div class="col-md-4">
         <div class="card p-4">
             <div class="card-body">
-                <form asp-action="Login" asp-controller="Login" method="post">
+                <form id="loginForm" method="post">
                     <div class="mb-3">
                         <label class="form-label">E-posta</label>
                         <input type="email" name="Email" class="form-control" placeholder="Lütfen e-posta adresinizi giriniz.">
@@ -28,8 +28,45 @@
                     </div>
                 </form>
 
+                <div class="example-alert" id="error" hidden><div class="alert alert-fill alert-danger alert-dismissible alert-icon"><em class="icon ni ni-cross-circle"></em> <p id="errormessage"></p></div></div>
 
             </div>
         </div>
     </div>
 </section>
+
+@section Scripts{
+    <script>
+        $(document).ready(function () {
+            $("#loginForm").submit(function (event) { // buton idli elemana tıklandığında
+                event.preventDefault();
+                var formData = new FormData(this);
+                $.ajax({
+                    url: '@Url.Action("Login", "Login")', // serileştirilen değerleri ajax.php dosyasına
+                    type: 'POST', // post metodu ile
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    data: formData,  // yukarıda serileştirdiğimiz gonderilenform değişkeni
+                    success: function (e) { // gonderme işlemi başarılı ise e değişkeni ile gelen değerleri aldı
+                        console.log(e);
+                        document.getElementById("error").setAttribute("hidden", "true");
+                        var svgContainer, newSvgContent;
+                        if (e.success == true) {
+                            newSvgContent = "Başarılı";
+                            window.location.href = '/Home/Index';
+                        } else if (e.success == false) {
+                            svgContainer = document.getElementById('errormessage');
+                            newSvgContent = e.message;
+                            document.getElementById("error").removeAttribute("hidden");
+                        }
+                        svgContainer.innerHTML = newSvgContent;
+
+
+                    }
+                });
+
+            });
+        });
+    </script>
+}
